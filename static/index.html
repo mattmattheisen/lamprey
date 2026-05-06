@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LAMPREY // Shomer Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">LAMPREY</span>
+      <span class="header-sub">// SHOMER ANALYTICS</span>
+    </div>
+    <div class="header-right">
+      <span class="regime-badge" id="regime-badge">REGIME: —</span>
+      <span class="clock" id="clock">--:--:-- ET</span>
+    </div>
+  </header>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="label">LAST SCAN:</span>
+      <span id="last-scan-time">—</span>
+      <span class="label" style="margin-left:1.5rem">DURATION:</span>
+      <span id="scan-duration">—</span>
+      <span class="label" style="margin-left:1.5rem">TICKERS:</span>
+      <span id="ticker-count">—</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-scan" id="btn-scan">▶ SCAN NOW</button>
+      <span class="status-dot" id="status-dot"></span>
+      <span class="status-text" id="status-text">IDLE</span>
+    </div>
+  </div>
+
+  <!-- Macro gate row -->
+  <div class="macro-row" id="macro-row">
+    <div class="macro-gate" id="gate-vix">VIX <span>—</span></div>
+    <div class="macro-gate" id="gate-move">MOVE <span>STUB</span></div>
+    <div class="macro-gate" id="gate-cor1m">COR1M <span>STUB</span></div>
+    <div class="macro-gate" id="gate-vix-trend">VIX TREND <span>STUB</span></div>
+    <div class="macro-gate" id="gate-contango">CONTANGO <span>STUB</span></div>
+    <div class="macro-gate" id="gate-breadth">BREADTH <span>STUB</span></div>
+    <div class="macro-edge" id="edge-long">LONG EDGE: <span>—</span></div>
+    <div class="macro-edge" id="edge-short">SHORT EDGE: <span>—</span></div>
+  </div>
+
+  <!-- Results table -->
+  <main class="main">
+    <div class="table-header">
+      <div class="col-ticker">TICKER</div>
+      <div class="col-signal">SIG</div>
+      <div class="col-composite">LONG COMP</div>
+      <div class="col-composite">SHORT COMP</div>
+      <div class="col-sentiment">SENTI</div>
+      <div class="col-volume">VOL-Z</div>
+      <div class="col-candle">CDL</div>
+      <div class="col-news">NEWS</div>
+      <div class="col-borrow">BORROW</div>
+      <div class="col-si">SI%</div>
+      <div class="col-notes">NOTES</div>
+    </div>
+    <div id="results-body">
+      <div class="empty-state">Press SCAN NOW or wait for scheduled scan.</div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>LAMPREY v0.1 // SHOMER ANALYTICS // DATA MAY BE STUBBED</span>
+    <span id="footer-watchlist"></span>
+  </footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
