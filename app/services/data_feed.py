@@ -140,4 +140,30 @@ async def fetch_unusual_whales(ticker: str) -> Dict[str, Any]:
 
 async def fetch_news_catalyst(ticker: str) -> Dict[str, Any]:
     """Return NLP headline score 0-1.  Stubbed until NEWSAPI_KEY is set."""
-    if not settings.newsapi_l
+    if not settings.newsapi_live:
+        log.debug("fetch_news_catalyst: STUBBED for %s", ticker)
+        return {"headline_score": 0.0, "article_count": 0}
+
+    url = "https://newsapi.org/v2/everything"
+    params = {
+        "q": ticker,
+        "language": "en",
+        "pageSize": 10,
+        "apiKey": settings.newsapi_key,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(url, params=params)
+            r.raise_for_status()
+            articles = r.json().get("articles", [])
+        if not articles:
+            return {"headline_score": 0.0, "article_count": 0}
+        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer  # type: ignore
+        analyzer = SentimentIntensityAnalyzer()
+        scores = [analyzer.polarity_scores(a.get("title", ""))["compound"] for a in articles]
+        avg = sum(scores) / len(scores)
+        normalized = round((avg + 1) / 2, 4)
+        return {"headline_score": normalized, "article_count": len(articles)}
+    except Exception as exc:
+        log.warning("fetch_news_catalyst failed for %s: %s", ticker, exc)
+        return {"headline_score": 0.0, "article_count": 0}
