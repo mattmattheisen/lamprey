@@ -6,7 +6,7 @@ httpx==0.27.0
 pydantic==2.7.1
 pydantic-settings==2.2.1
 pandas==2.2.2
-https://github.com/twopirllc/pandas-ta/archive/refs/heads/main.zip
+git+https://github.com/twopirllc/pandas-ta.git@main
 vaderSentiment==3.3.2
 python-dotenv==1.0.1
 praw==7.7.1
