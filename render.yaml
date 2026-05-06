@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: lamprey
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TIINGO_API_KEY
+        sync: false
+      - key: REDDIT_CLIENT_ID
+        sync: false
+      - key: REDDIT_CLIENT_SECRET
+        sync: false
+      - key: UNUSUAL_WHALES_API_KEY
+        sync: false
+      - key: NEWSAPI_KEY
+        sync: false
+      - key: MAX_BORROW_RATE_PCT
+        value: "10"
+      - key: MAX_SHORT_INTEREST_PCT
+        value: "30"
+      - key: LONG_COMPOSITE_THRESHOLD
+        value: "0.65"
+      - key: SHORT_COMPOSITE_THRESHOLD
+        value: "0.75"
+      - key: DEFAULT_WATCHLIST
+        value: "GME,AMC,BBBY,SPCE,MVIS,CLOV,WKHS,RIDE,NKLA,KOSS"
