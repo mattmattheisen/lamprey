@@ -13,4 +13,4 @@ praw==7.7.1
 newsapi-python==0.2.7
 pytest==8.2.0
 pytest-asyncio==0.23.6
-numpy==1.26.4
+numpy>=2.0.0
