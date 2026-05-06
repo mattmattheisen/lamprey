@@ -16,6 +16,7 @@ import logging
 from typing import Any, Dict, List
 
 import pandas as pd
+import pandas_ta_classic as ta
 
 from app.config import get_settings
 from app.models.signals import SignalComponents
@@ -52,7 +53,6 @@ def _candlestick_score(ohlcv: List[Dict[str, Any]]) -> float:
     if len(ohlcv) < 10:
         return 0.0
     try:
-        import pandas_ta as ta  # type: ignore
         df = pd.DataFrame(ohlcv)
         for col in ["open", "high", "low", "close"]:
             df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -123,7 +123,6 @@ async def short_composite(
     inv_candle = 0.0
     if len(ohlcv) >= 10:
         try:
-            import pandas_ta as ta  # type: ignore
             df = pd.DataFrame(ohlcv)
             for col in ["open", "high", "low", "close"]:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
