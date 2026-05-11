@@ -1,8 +1,7 @@
 """
-scanner.py — Orchestrator.  run_scan() → ScanResult.
+scanner.py — Orchestrator. run_scan() → ScanResult.
 """
 from __future__ import annotations
-
 import asyncio
 import logging
 import time
@@ -30,24 +29,22 @@ async def _scan_ticker(ticker: str, macro: MacroGates) -> TickerResult:
     now = datetime.now(timezone.utc)
 
     ohlcv, reddit, news, uw = await asyncio.gather(
-        fetch_ohlcv(ticker),
+        asyncio.to_thread(fetch_ohlcv, ticker),
         fetch_reddit_sentiment(ticker),
         fetch_news_catalyst(ticker),
         fetch_unusual_whales(ticker),
     )
 
-    long_comp = await compute_signals(ticker, ohlcv, reddit, news)
+    long_comp  = await compute_signals(ticker, ohlcv, reddit, news)
     short_comp = await short_composite(ticker, ohlcv, reddit, news)
     short_gates = evaluate_short_gates(uw)
 
     notes_parts: List[str] = []
-
     signal: Literal["LONG", "SHORT", "WATCH", "FLAT"] = "FLAT"
 
     if overlay["long_gated"] and overlay["short_gated"]:
         signal = "FLAT"
-        notes_parts.append(f"regime={macro.regime} gates both suspended")
-
+        notes_parts.append(f"regime={macro.regime} both gates suspended")
     elif overlay["long_gated"]:
         if (
             short_comp.composite >= settings.short_composite_threshold
@@ -60,7 +57,6 @@ async def _scan_ticker(ticker: str, macro: MacroGates) -> TickerResult:
         else:
             signal = "FLAT"
         notes_parts.append(f"long suspended ({macro.long_edge})")
-
     else:
         if long_comp.composite >= settings.long_composite_threshold:
             signal = "LONG"
@@ -78,12 +74,12 @@ async def _scan_ticker(ticker: str, macro: MacroGates) -> TickerResult:
             signal = "FLAT"
 
     if macro.short_edge == "news_gated" and signal == "SHORT":
-        if news.get("article_count", 0) == 0:
+        if news.get("articles", 0) == 0:
             signal = "FLAT"
             notes_parts.append("short news-gated: no catalyst")
 
     log.info(
-        "%-6s signal=%-5s long_comp=%.4f short_comp=%.4f regime=%s",
+        "%-6s signal=%-5s long=%.4f short=%.4f regime=%s",
         ticker, signal, long_comp.composite, short_comp.composite, macro.regime,
     )
 
@@ -104,12 +100,9 @@ async def run_scan(tickers: Optional[List[str]] = None) -> ScanResult:
     t0 = time.perf_counter()
     watchlist = tickers or settings.watchlist
     macro = await get_macro_gates()
-
     results = await asyncio.gather(*[_scan_ticker(t, macro) for t in watchlist])
-
     duration_ms = round((time.perf_counter() - t0) * 1000, 4)
     log.info("scan complete: %d tickers in %.1f ms", len(results), duration_ms)
-
     return ScanResult(
         scanned_at=datetime.now(timezone.utc),
         macro=macro,
