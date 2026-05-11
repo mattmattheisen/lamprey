@@ -11,8 +11,24 @@ from datetime import date, timedelta
 from typing import Any, Dict, List
 
 import yfinance as yf
+from yfinance import shared as yf_shared
 
 from app.config import get_settings
+
+# Spoof browser headers so Yahoo doesn't block Render's server IPs
+import requests
+_session = requests.Session()
+_session.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+})
 
 log = logging.getLogger("lamprey")
 settings = get_settings()
@@ -23,7 +39,7 @@ settings = get_settings()
 def fetch_ohlcv(ticker: str, lookback_days: int = 30) -> List[Dict[str, Any]]:
     """Return list of daily OHLCV dicts for *ticker* via Yahoo Finance."""
     try:
-        t = yf.Ticker(ticker)
+        t = yf.Ticker(ticker, session=_session)
         df = t.history(period=f"{lookback_days}d", interval="1d", auto_adjust=True)
         if df.empty:
             log.warning("fetch_ohlcv: no data for %s — using stub", ticker)
@@ -68,7 +84,7 @@ def fetch_vix_level() -> float:
     """Return latest VIX level. Tries ^VIX then UVXY as fallback."""
     for ticker in ["^VIX", "UVXY"]:
         try:
-            df = yf.Ticker(ticker).history(period="5d", interval="1d")
+            df = yf.Ticker(ticker, session=_session).history(period="5d", interval="1d")
             if not df.empty:
                 val = round(float(df["Close"].iloc[-1]), 2)
                 log.info("fetch_vix_level: %s = %.2f", ticker, val)
@@ -105,7 +121,7 @@ async def fetch_news_catalyst(ticker: str) -> Dict[str, Any]:
             if attempt > 0:
                 await asyncio.sleep(attempt * 2)  # 2s then 4s backoff
 
-            t = yf.Ticker(ticker)
+            t = yf.Ticker(ticker, session=_session)
             news = t.news
             if not news:
                 return {"headline_score": 0.5, "articles": 0}
@@ -157,7 +173,7 @@ def fetch_focus_quote(ticker: str) -> Dict[str, Any]:
     """
     try:
         import pandas as pd
-        t = yf.Ticker(ticker)
+        t = yf.Ticker(ticker, session=_session)
 
         df = t.history(period="1y", interval="1d", auto_adjust=True)
         if df.empty:
