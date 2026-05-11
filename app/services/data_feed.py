@@ -71,40 +71,12 @@ async def fetch_vix_level() -> float:
     return 18.0
 
 
-# ── Reddit sentiment ──────────────────────────────────────────────────────────
+# ── Reddit sentiment (permanently stubbed) ────────────────────────────────────
 
 async def fetch_reddit_sentiment(ticker: str) -> Dict[str, Any]:
-    """Return sentiment dict with mention_count, vader_compound, velocity."""
-    if not settings.reddit_live:
-        log.debug("fetch_reddit_sentiment: STUBBED for %s", ticker)
-        return {"mention_count": 0, "vader_compound": 0.0, "velocity": 0.0}
-
-    try:
-        import praw  # type: ignore
-        reddit = praw.Reddit(
-            client_id=settings.reddit_client_id,
-            client_secret=settings.reddit_client_secret,
-            user_agent=settings.reddit_user_agent,
-        )
-        subreddits = ["wallstreetbets", "stocks", "investing", "memestock"]
-        texts: List[str] = []
-        for sub_name in subreddits:
-            sub = reddit.subreddit(sub_name)
-            for post in sub.search(ticker, limit=20, time_filter="day"):
-                texts.append(post.title + " " + (post.selftext or ""))
-
-        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer  # type: ignore
-        analyzer = SentimentIntensityAnalyzer()
-        compounds = [analyzer.polarity_scores(t)["compound"] for t in texts]
-        compound = sum(compounds) / len(compounds) if compounds else 0.0
-        return {
-            "mention_count": len(texts),
-            "vader_compound": round(compound, 4),
-            "velocity": round(min(len(texts) / 20.0, 1.0), 4),
-        }
-    except Exception as exc:
-        log.warning("fetch_reddit_sentiment failed for %s: %s", ticker, exc)
-        return {"mention_count": 0, "vader_compound": 0.0, "velocity": 0.0}
+    """Reddit sentiment is not active — returns neutral values."""
+    log.debug("fetch_reddit_sentiment: STUBBED (permanently) for %s", ticker)
+    return {"mention_count": 0, "vader_compound": 0.0, "velocity": 0.0}
 
 
 # ── Unusual Whales flow ───────────────────────────────────────────────────────
