@@ -92,32 +92,47 @@ async def fetch_reddit_sentiment(ticker: str) -> Dict[str, Any]:
 async def fetch_news_catalyst(ticker: str) -> Dict[str, Any]:
     """
     Fetch recent news headlines via yfinance and score with VADER.
+    Includes retry with backoff to handle Yahoo Finance rate limiting.
     Falls back to neutral 0.5 if no headlines found.
     """
-    try:
-        t = yf.Ticker(ticker)
-        news = t.news
-        if not news:
-            return {"headline_score": 0.5, "articles": 0}
+    import asyncio
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-        sia = SentimentIntensityAnalyzer()
-        scores = []
-        for item in news[:10]:
-            title = item.get("content", {}).get("title", "") or item.get("title", "")
-            if title:
-                compound = sia.polarity_scores(title)["compound"]
-                scores.append(compound)
+    sia = SentimentIntensityAnalyzer()
 
-        if not scores:
-            return {"headline_score": 0.5, "articles": 0}
+    for attempt in range(3):
+        try:
+            if attempt > 0:
+                await asyncio.sleep(attempt * 2)  # 2s then 4s backoff
 
-        avg = sum(scores) / len(scores)
-        normalized = round((avg + 1) / 2, 4)
-        return {"headline_score": normalized, "articles": len(scores)}
-    except Exception as exc:
-        log.warning("fetch_news_catalyst failed for %s: %s", ticker, exc)
-        return {"headline_score": 0.5, "articles": 0}
+            t = yf.Ticker(ticker)
+            news = t.news
+            if not news:
+                return {"headline_score": 0.5, "articles": 0}
+
+            scores = []
+            for item in news[:10]:
+                title = (
+                    item.get("content", {}).get("title", "")
+                    or item.get("title", "")
+                )
+                if title:
+                    compound = sia.polarity_scores(title)["compound"]
+                    scores.append(compound)
+
+            if not scores:
+                return {"headline_score": 0.5, "articles": 0}
+
+            avg = sum(scores) / len(scores)
+            normalized = round((avg + 1) / 2, 4)
+            log.info("fetch_news_catalyst: %s -> %.4f (%d articles)", ticker, normalized, len(scores))
+            return {"headline_score": normalized, "articles": len(scores)}
+
+        except Exception as exc:
+            log.warning("fetch_news_catalyst attempt %d failed for %s: %s", attempt + 1, ticker, exc)
+
+    log.warning("fetch_news_catalyst: all retries failed for %s -- returning neutral", ticker)
+    return {"headline_score": 0.5, "articles": 0}
 
 
 # ── Unusual Whales (stubbed) ──────────────────────────────────────────────────
