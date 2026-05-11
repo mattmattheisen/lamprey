@@ -1,30 +1,39 @@
 """
 config.py — App settings via environment variables.
-Tiingo removed — yfinance requires no API key.
+yfinance requires no API key. NewsAPI optional for news scoring.
 """
 from __future__ import annotations
 from functools import lru_cache
-from pydantic_settings import BaseSettings
+from typing import List
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # Watchlist for the meme stock scanner
-    watchlist: list[str] = [
-        "GME", "AMC", "BBBY", "MVIS", "CLOV",
-        "WISH", "SOFI", "PLTR", "RIVN", "LCID",
-    ]
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
-    # Signal thresholds
-    long_composite_threshold: float  = 0.65
-    short_composite_threshold: float = 0.60
+    # ── Optional API keys ──────────────────────────────────────────────────────
+    newsapi_key: str = ""
 
-    # VIX regime gate
-    vix_high_threshold: float = 25.0
-    vix_low_threshold:  float = 15.0
+    # ── Short gate thresholds ──────────────────────────────────────────────────
+    max_borrow_rate_pct: float = 10.0
+    max_short_interest_pct: float = 30.0
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # ── Signal thresholds ─────────────────────────────────────────────────────
+    long_composite_threshold: float = 0.65
+    short_composite_threshold: float = 0.75
+
+    # ── Watchlist ─────────────────────────────────────────────────────────────
+    default_watchlist: str = "GME,AMC,BBBY,SPCE,MVIS,CLOV,WKHS,RIDE,NKLA,KOSS"
+
+    @property
+    def watchlist(self) -> List[str]:
+        return [t.strip().upper() for t in self.default_watchlist.split(",") if t.strip()]
+
+    @property
+    def newsapi_live(self) -> bool:
+        return bool(self.newsapi_key)
 
 
 @lru_cache
