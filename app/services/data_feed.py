@@ -63,17 +63,31 @@ def _stub_ohlcv(ticker: str, days: int) -> List[Dict[str, Any]]:
     return rows
 
 
-# ── VIXY (VIX proxy via Tiingo) ───────────────────────────────────────────────
+# ── VIX (via Tiingo) ─────────────────────────────────────────────────────────
 
 async def fetch_vix_level() -> float:
-    """Return latest VIXY close as VIX proxy.  Live if TIINGO_API_KEY set."""
+    """Return latest VIX close directly from Tiingo.  Live if TIINGO_API_KEY set."""
     if not settings.tiingo_live:
         log.debug("fetch_vix_level: STUBBED")
         return 18.0
 
-    rows = await fetch_ohlcv("VIXY", lookback_days=5)
-    if rows:
-        return float(rows[-1].get("close", 18.0))
+    from datetime import date, timedelta
+    start_date = (date.today() - timedelta(days=7)).isoformat()
+    url = "https://api.tiingo.com/tiingo/daily/%5EVIX/prices"
+    params = {
+        "token": settings.tiingo_api_key,
+        "resampleFreq": "daily",
+        "startDate": start_date,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(url, params=params)
+            r.raise_for_status()
+            rows = r.json()
+        if rows:
+            return float(rows[-1].get("close", 18.0))
+    except Exception as exc:
+        log.warning("fetch_vix_level failed: %s — returning default 18.0", exc)
     return 18.0
 
 
