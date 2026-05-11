@@ -91,12 +91,60 @@ async def fetch_vix_level() -> float:
     return 18.0
 
 
-# ── Reddit sentiment (permanently stubbed) ────────────────────────────────────
+# ── Reddit sentiment (public scraper — no API key required) ──────────────────
 
 async def fetch_reddit_sentiment(ticker: str) -> Dict[str, Any]:
-    """Reddit sentiment is not active — returns neutral values."""
-    log.debug("fetch_reddit_sentiment: STUBBED (permanently) for %s", ticker)
-    return {"mention_count": 0, "vader_compound": 0.0, "velocity": 0.0}
+    """Scrape public WSB search results via old.reddit.com JSON — no API key needed.
+
+    Uses old.reddit.com/r/wallstreetbets/search.json which is publicly readable.
+    Runs post titles through vaderSentiment to produce compound score.
+    Falls back to neutral on any error so the scanner never crashes.
+    """
+    url = "https://old.reddit.com/r/wallstreetbets/search.json"
+    params = {
+        "q": ticker,
+        "sort": "new",
+        "t": "day",
+        "limit": 25,
+        "restrict_sr": "on",
+    }
+    headers = {
+        # Reddit requires a real User-Agent or returns 429
+        "User-Agent": "lamprey/0.1 (stock sentiment scanner; non-commercial)",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+            r = await client.get(url, params=params, headers=headers)
+            r.raise_for_status()
+            data = r.json()
+
+        posts = data.get("data", {}).get("children", [])
+        texts = [
+            p["data"].get("title", "") + " " + p["data"].get("selftext", "")
+            for p in posts
+            if p.get("data")
+        ]
+
+        if not texts:
+            log.debug("fetch_reddit_sentiment: no posts found for %s", ticker)
+            return {"mention_count": 0, "vader_compound": 0.0, "velocity": 0.0}
+
+        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer  # type: ignore
+        analyzer = SentimentIntensityAnalyzer()
+        compounds = [analyzer.polarity_scores(t)["compound"] for t in texts]
+        compound = round(sum(compounds) / len(compounds), 4)
+        mention_count = len(texts)
+        velocity = round(min(mention_count / 25.0, 1.0), 4)
+
+        log.info("fetch_reddit_sentiment: %s — %d posts, compound=%.4f", ticker, mention_count, compound)
+        return {
+            "mention_count": mention_count,
+            "vader_compound": compound,
+            "velocity": velocity,
+        }
+    except Exception as exc:
+        log.warning("fetch_reddit_sentiment failed for %s: %s", ticker, exc)
+        return {"mention_count": 0, "vader_compound": 0.0, "velocity": 0.0}
 
 
 # ── Unusual Whales flow ───────────────────────────────────────────────────────
