@@ -1,17 +1,18 @@
+"""
+signals.py — Pydantic models for all signal data structures.
+"""
 from __future__ import annotations
-
 from datetime import datetime
 from typing import List, Literal, Optional
-
 from pydantic import BaseModel, field_validator
 
 
 class SignalComponents(BaseModel):
-    sentiment: float = 0.0        # 0-1
-    volume_zscore: float = 0.0    # normalised 0-1 (raw z capped at 4)
-    candlestick: float = 0.0      # 0-1
-    news_catalyst: float = 0.0    # 0-1
-    composite: float = 0.0        # weighted composite 0-1
+    sentiment: float = 0.0
+    volume_zscore: float = 0.0
+    candlestick: float = 0.0
+    news_catalyst: float = 0.0
+    composite: float = 0.0
 
     @field_validator("sentiment", "volume_zscore", "candlestick", "news_catalyst", "composite", mode="before")
     @classmethod
