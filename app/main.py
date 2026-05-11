@@ -62,8 +62,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Lamprey — Meme Stock Momentum Scanner",
-    description="Long/short composite signals with regime gating. Built by Shomer Analytics.",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
