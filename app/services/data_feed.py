@@ -25,8 +25,14 @@ async def fetch_ohlcv(ticker: str, lookback_days: int = 30) -> List[Dict[str, An
         log.debug("fetch_ohlcv: STUBBED for %s", ticker)
         return _stub_ohlcv(ticker, lookback_days)
 
+    from datetime import date, timedelta
+    start_date = (date.today() - timedelta(days=lookback_days)).isoformat()
     url = f"https://api.tiingo.com/tiingo/daily/{ticker}/prices"
-    params = {"token": settings.tiingo_api_key, "resampleFreq": "daily"}
+    params = {
+        "token": settings.tiingo_api_key,
+        "resampleFreq": "daily",
+        "startDate": start_date,
+    }
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.get(url, params=params)
