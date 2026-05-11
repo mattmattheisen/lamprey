@@ -9,7 +9,6 @@ pandas==2.2.2
 pandas-ta-classic
 vaderSentiment==3.3.2
 python-dotenv==1.0.1
-praw==7.7.1
 newsapi-python==0.2.7
 pytest==8.2.0
 pytest-asyncio==0.23.6
